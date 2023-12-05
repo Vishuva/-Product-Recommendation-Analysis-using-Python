@@ -1,0 +1,42 @@
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+# Load a fictional dataset (replace this with your own dataset)
+data = {
+    'ProductID': [1, 2, 3, 4, 5],
+    'ProductName': ['Laptop', 'Smartphone', 'Tablet', 'Headphones', 'Smartwatch'],
+    'Category': ['Electronics', 'Electronics', 'Electronics', 'Audio', 'Wearables'],
+    'Description': ['Powerful laptop for productivity', 'High-end smartphone with great camera', 'Compact tablet for on-the-go', 'Noise-canceling headphones for immersive audio', 'Smartwatch with fitness tracking'],
+}
+
+df = pd.DataFrame(data)
+
+# Split the dataset into training and testing sets
+train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
+
+# Use TF-IDF to vectorize product descriptions
+tfidf_vectorizer = TfidfVectorizer(stop_words='english')
+tfidf_matrix = tfidf_vectorizer.fit_transform(train_df['Description'].values.astype('U'))
+
+# Calculate cosine similarity between products based on their descriptions
+cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
+
+# Function to get product recommendations for a given product
+def get_product_recommendations(product_id, num_recommendations=5):
+    product_index = train_df[train_df['ProductID'] == product_id].index[0]
+    sim_scores = list(enumerate(cosine_sim[product_index]))
+    sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
+    sim_scores = sim_scores[1:num_recommendations + 1]
+    product_indices = [i[0] for i in sim_scores]
+    return train_df['ProductName'].iloc[product_indices].tolist()
+
+# Example: Get product recommendations for a specific product
+product_id_to_recommend = 1  # replace with the product ID for which you want recommendations
+recommendations = get_product_recommendations(product_id_to_recommend)
+
+# Display the recommendations
+print(f"Product Recommendations for ProductID {product_id_to_recommend}:")
+for i, product_name in enumerate(recommendations, start=1):
+    print(f"{i}. {product_name}")
